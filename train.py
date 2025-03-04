@@ -1,15 +1,17 @@
 import os
 import torch
+import numpy as np
 from vit import ViT
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
-from dataset import CIFAR10_train
+from dataset import MedMnist
+from tqdm import tqdm
 
 # 设备
 DEVICE = 'cuda:0' if torch.cuda.is_available() else 'cpu' 
 
 # 数据集
-dataset = CIFAR10_train()
+dataset = MedMnist()
 
 # 模型
 model = ViT().to(DEVICE)
@@ -27,15 +29,12 @@ optimzer=torch.optim.Adam(model.parameters(),lr=1e-3)
 训练模型
 '''
 
-EPOCH=100
-BATCH_SIZE=64
+EPOCH=5
+BATCH_SIZE=dataset.BATCH_SIZE
 
-# 数据加载器
-dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=10, persistent_workers=True)  # 使用数据加载器迭代后
-
-iter_count = 0
 for epoch in range(EPOCH):
-    for imgs,label in dataloader:
+    for imgs,label in tqdm(dataset.train_loader):
+        label = np.transpose(label).reshape(-1)
         # 真实输出
         logits = model(imgs.to(DEVICE))
 
@@ -48,11 +47,9 @@ for epoch in range(EPOCH):
         # 根据梯度更新优化器参数
         optimzer.step()
 
-        if iter_count%1000 == 0:
-            print('epoch:{} iter:{} loss:{}'.format(epoch, iter_count, loss))
-            torch.save(model.state_dict(), '.model.pth')
-            os.replace('.model.pth', 'model.pth')
-        iter_count += 1
-
+    print('epoch:{} loss:{}'.format(epoch, loss))
+    torch.save(model.state_dict(), '.model.pth')
+    os.replace('.model.pth', 'model.pth')
+    
 
 
