@@ -127,10 +127,10 @@ class ViT(nn.Module):
 
 if __name__ == "__main__":
     model_vit = ViT(
-        image_size = 256,
-        patch_size = 32,
-        num_classes = 1000,
-        dim = 1024,
+        image_size = 28,
+        patch_size = 4,
+        num_classes = 9,
+        dim = 16,
         depth = 6,
         heads = 16,
         mlp_dim = 2048,
@@ -138,7 +138,7 @@ if __name__ == "__main__":
         emb_dropout = 0.1
     )
 
-    img = torch.randn(16, 3, 256, 256)
+    img = torch.randn(5,3,28,28)
 
     preds = model_vit(img) 
     print(preds)
