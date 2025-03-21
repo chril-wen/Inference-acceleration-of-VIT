@@ -141,6 +141,7 @@ if __name__ == "__main__":
     img = torch.randn(16, 3, 256, 256)
 
     preds = model_vit(img) 
+    print(preds)
 
     print(preds.shape)  # (16, 1000)
 
