@@ -32,9 +32,6 @@ class MultiHeadAttention(nn.Module):
         attn=torch.matmul(q,k)/math.sqrt(self.q_k_size) # (batch_size,head,seq_len,seq_len) row是q,col是k
         
         # 注意力分值处理
-        # attn_mask: (batch_size,seq_len,seq_len)   pad词的地方是true
-        attn_mask=attn_mask.unsqueeze(1).expand(-1,self.head,-1,-1) # attn_mask: (batch_size,head,seq_len,seq_len)
-        attn=attn.masked_fill(attn_mask,-1e9)   # 赋很小的一个负数
         attn=torch.softmax(attn,dim=-1) # scores: (batch_size,head,seq_len,seq_len) 最后一维做概率分布，谁大谁高，得到这个attn时最小的数字会乘0，乘上value后也是全0，没意义没贡献
 
         # 注意力与V相乘 每个词的query和key点积求分数
