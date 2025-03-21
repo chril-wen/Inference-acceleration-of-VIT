@@ -130,7 +130,7 @@ if __name__ == "__main__":
         image_size = 28,
         patch_size = 4,
         num_classes = 9,
-        dim = 16,
+        dim = 5,
         depth = 6,
         heads = 16,
         mlp_dim = 2048,

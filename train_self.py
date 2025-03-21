@@ -1,7 +1,7 @@
 import os
 import torch
 import numpy as np
-from vit import ViT
+from vit_self import ViT
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from dataset import MedMnist
