@@ -11,26 +11,26 @@ class EncoderBlock(nn.Module):
     def __init__(self,emb_size,q_k_size,v_size,f_size,head,dropout=0.1):
         super().__init__()
 
+        self.addnorm1=nn.LayerNorm(emb_size) # 按last dim做norm
         self.multihead_attn=MultiHeadAttention(emb_size,q_k_size,v_size,head)   # 多头注意力
         self.z_linear=nn.Linear(head*v_size,emb_size) # 调整多头输出尺寸为emb_size
-        self.addnorm1=nn.LayerNorm(emb_size) # 按last dim做norm
+        self.addnorm2=nn.LayerNorm(emb_size) # 按last dim做norm
 
         # feed-forward结构
-        self.feedforward=nn.Sequential(
+        self.feedforward_MLP=nn.Sequential(
             nn.Linear(emb_size,f_size),
             nn.GELU(),
             nn.Dropout(dropout),
             nn.Linear(f_size,emb_size),
             nn.Dropout(dropout)
         )
-        self.addnorm2=nn.LayerNorm(emb_size) # 按last dim做norm
 
     def forward(self,x,attn_mask): # x: (batch_size,seq_len,emb_size)
         z=self.multihead_attn(x,x,attn_mask)  # z: (batch_size,seq_len,head*v_size)
         z=self.z_linear(z) # z: (batch_size,seq_len,emb_size)
         output1=self.addnorm1(z+x) # z: (batch_size,seq_len,emb_size)
         
-        z=self.feedforward(output1) # z: (batch_size,seq_len,emb_size)
+        z=self.feedforward_MLP(output1) # z: (batch_size,seq_len,emb_size)
         return self.addnorm2(z+output1) # (batch_size,seq_len,emb_size)
 
 if __name__=='__main__':

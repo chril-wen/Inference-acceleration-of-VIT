@@ -7,8 +7,7 @@ from dataset import de_preprocess,train_dataset,de_vocab,PAD_IDX
 class Encoder(nn.Module):
     def __init__(self,emb_size,q_k_size,v_size,f_size,head,nblocks,dropout=0.1):
         super().__init__()
-        self.emb=EmbeddingWithPosition(emb_size,dropout)
-
+        
         self.encoder_blocks=nn.ModuleList()
         for _ in range(nblocks):
             self.encoder_blocks.append(EncoderBlock(emb_size,q_k_size,v_size,f_size,head))
