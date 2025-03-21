@@ -47,9 +47,9 @@ for epoch in range(EPOCH):
         # 根据梯度更新优化器参数
         optimzer.step()
 
-    print('epoch:{} loss:{}'.format(epoch, loss))
-    torch.save(model.state_dict(), '.model.pth')
-    os.replace('.model.pth', 'model.pth')
+    print('epoch:{} loss:{}'.format(epoch+1, loss))
+    torch.save(model.state_dict(), '.model1.pth')
+    os.replace('.model1.pth', 'model1.pth')
     
 
 
