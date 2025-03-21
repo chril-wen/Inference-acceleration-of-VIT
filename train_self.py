@@ -39,7 +39,7 @@ optimzer=torch.optim.Adam(model.parameters(),lr=1e-3)
 训练模型
 '''
 
-EPOCH=5
+EPOCH=1
 BATCH_SIZE=dataset.BATCH_SIZE
 
 for epoch in range(EPOCH):
