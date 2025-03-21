@@ -142,6 +142,7 @@ if __name__ == "__main__":
 
     preds = model_vit(img) 
     print(preds)
+    print("===================================================")
 
     print(preds.shape)  # (16, 1000)
 
