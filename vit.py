@@ -32,5 +32,6 @@ class ViT(nn.Module):
 if __name__=='__main__':
     vit=ViT()
     x=torch.rand(5,3,28,28)
+    print(x.shape)
     y=vit(x)
     print(y.shape)
