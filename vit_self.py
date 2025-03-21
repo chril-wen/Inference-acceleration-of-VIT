@@ -1,4 +1,5 @@
 import torch
+import nvtx
 from torch import nn, einsum
 import torch.nn.functional as F
 
@@ -27,7 +28,9 @@ class FeedForward(nn.Module):
             nn.Dropout(dropout)
         )
     def forward(self, x):
-        return self.net(x)
+        with nvtx.annotate("attention", color="yellow"):
+            net = self.net(x)
+        return net
 
    
 class Attention(nn.Module):              
@@ -48,16 +51,17 @@ class Attention(nn.Module):
         ) if project_out else nn.Identity()
 
     def forward(self, x):
-        b, n, _, h = *x.shape, self.heads
-        qkv = self.to_qkv(x).chunk(3, dim=-1)           # (b, n(65), dim*3) ---> 3 * (b, n, dim)
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=h), qkv)          # q, k, v   (b, h, n, dim_head(64))
+        with nvtx.annotate("attention", color="blue"):
+            b, n, _, h = *x.shape, self.heads
+            qkv = self.to_qkv(x).chunk(3, dim=-1)           # (b, n(65), dim*3) ---> 3 * (b, n, dim)
+            q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=h), qkv)          # q, k, v   (b, h, n, dim_head(64))
 
-        dots = einsum('b h i d, b h j d -> b h i j', q, k) * self.scale
+            dots = einsum('b h i d, b h j d -> b h i j', q, k) * self.scale
 
-        attn = self.attend(dots)
+            attn = self.attend(dots)
 
-        out = einsum('b h i j, b h j d -> b h i d', attn, v)
-        out = rearrange(out, 'b h n d -> b n (h d)')
+            out = einsum('b h i j, b h j d -> b h i d', attn, v)
+            out = rearrange(out, 'b h n d -> b n (h d)')
         return self.to_out(out)
 
 class Transformer(nn.Module):
@@ -71,9 +75,10 @@ class Transformer(nn.Module):
             ]))
     
     def forward(self, x):
-        for attn, ff in self.layers:
-            x = attn(x) + x
-            x = ff(x) + x
+        with nvtx.annotate("transformer", color="green"):
+            for attn, ff in self.layers:
+                x = attn(x) + x
+                x = ff(x) + x
         return x
 
 class ViT(nn.Module):
@@ -108,19 +113,20 @@ class ViT(nn.Module):
         )
 
     def forward(self, img):
-        x = self.to_patch_embedding(img)        # b c (h p1) (w p2) -> b (h w) (p1 p2 c) -> b (h w) dim
-        b, n, _ = x.shape           # b表示batchSize, n表示每个块的空间分辨率, _表示一个块内有多少个值
+        with nvtx.annotate("vit", color="red"):
+            x = self.to_patch_embedding(img)        # b c (h p1) (w p2) -> b (h w) (p1 p2 c) -> b (h w) dim
+            b, n, _ = x.shape           # b表示batchSize, n表示每个块的空间分辨率, _表示一个块内有多少个值
 
-        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b=b)  # self.cls_token: (1, 1, dim) -> cls_tokens: (batchSize, 1, dim)  
-        x = torch.cat((cls_tokens, x), dim=1)               # 将cls_token拼接到patch token中去       (b, 65, dim)
-        x += self.pos_embedding[:, :(n+1)]                  # 加位置嵌入（直接加）      (b, 65, dim)
-        x = self.dropout(x)
+            cls_tokens = repeat(self.cls_token, '() n d -> b n d', b=b)  # self.cls_token: (1, 1, dim) -> cls_tokens: (batchSize, 1, dim)  
+            x = torch.cat((cls_tokens, x), dim=1)               # 将cls_token拼接到patch token中去       (b, 65, dim)
+            x += self.pos_embedding[:, :(n+1)]                  # 加位置嵌入（直接加）      (b, 65, dim)
+            x = self.dropout(x)
 
-        x = self.transformer(x)                                                 # (b, 65, dim)
+            x = self.transformer(x)                                                 # (b, 65, dim)
 
-        x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]                   # (b, dim)
+            x = x.mean(dim=1) if self.pool == 'mean' else x[:, 0]                   # (b, dim)
 
-        x = self.to_latent(x)                                                   # Identity (b, dim)
+            x = self.to_latent(x)                                                   # Identity (b, dim)
 
         return self.mlp_head(x)                                                 #  (b, num_classes)
 
